@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-import { generateOTP, sendOTP } from "@Middleware/otpVerify";
 import express from "express";
 import cors from "cors";
 

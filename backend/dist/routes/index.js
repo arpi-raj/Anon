@@ -31,6 +31,7 @@ app.post("/location", (req, res) => {
 app.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, password, name } = req.body;
     try {
+        // Attempt to create the user
         const result = yield prisma.user.create({
             data: {
                 name,
@@ -41,11 +42,14 @@ app.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         if (result) {
             console.log(result);
             console.log("User created successfully");
+            // You can send a success response if user creation is successful
             res.status(201).send("User created successfully");
         }
     }
     catch (error) {
+        // Catch any errors that occur during the database operation
         console.error("Error creating user:", error);
+        // Send an error response to the client
         res.status(500).send("An error occurred while creating the user");
     }
 }));
@@ -53,4 +57,3 @@ app.post("/signin", (req, res) => {
     res.send("Signin route");
 });
 exports.default = app;
-//# sourceMappingURL=index.js.map

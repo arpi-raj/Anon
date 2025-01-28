@@ -2,23 +2,11 @@
   "compilerOptions": {
     "target": "es2016",
     "module": "commonjs",
-    "outDir": "./dist", // All files will be emitted here
-    "rootDir": "./", // Keep rootDir to the project root
-    "esModuleInterop": true, // Ensures compatibility with CommonJS modules
+    "rootDirs": ["./backend", "./backend/Middleware"], // List all source directories
+    "outDir": "./dist", // Where the compiled files will go
+    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "strict": true, // Enable strict type-checking
-    "skipLibCheck": true, // Skip checking type definitions
-    "moduleResolution": "node", // Use Node module resolution strategy
-    "noEmitOnError": true, // Do not emit files if there are any errors
-    "declaration": false, // Do not generate .d.ts files
-    "sourceMap": true, // Generate source maps
-    "removeComments": true, // Remove comments in output
-    "baseUrl": "./",
-    "paths": {
-      "@Middleware/*": ["Middleware/*"], // Map "Middleware" to its folder
-      "@Routes/*": ["routes/*"] // Map "routes" to its folder
-    }
-  },
-  "include": ["Middleware/**/*", "routes/**/*"],
-  "exclude": ["node_modules"]
+    "strict": true,
+    "skipLibCheck": true
+  }
 }

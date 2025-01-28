@@ -17,9 +17,11 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^6.9.16",
-    "prisma": "^6.1.0"
+    "prisma": "^6.1.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.17"
+    "@types/cors": "^2.8.17",
+    "@types/ws": "^8.5.14"
   }
 }
