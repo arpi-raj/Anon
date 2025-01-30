@@ -1,68 +1,118 @@
 import "./App.css";
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import url from "./assets/config";
+import "./components/List";
+import List from "./components/List";
+
+interface LocationState {
+  latitude: number;
+  longitude: number;
+}
 
 function App() {
-  const [location, setLocation] = useState({ latitude: 0, longitude: 0 });
+  const [location, setLocation] = useState<LocationState>({
+    latitude: 0,
+    longitude: 0,
+  });
   const [watchId, setWatchId] = useState<number | null>(null);
+  const [isTracking, setIsTracking] = useState(false);
 
-  // Define fetchLocation inside the component to have access to setLocation
-  const fetchLocation = async (): Promise<void> => {
-    console.log("Button clicked");
+  const handleLocationError = (error: GeolocationPositionError) => {
+    console.error("Error getting location:", error.message);
+  };
+
+  const sendLocation = useCallback(async () => {
+    try {
+      await axios.post(`/api/location`, {
+        latitude: location.latitude,
+        longitude: location.longitude,
+        prefRadius: 10,
+      });
+    } catch (error) {
+      console.error("Error sending location:", error);
+    }
+  }, [location]);
+
+  const startLocationTracking = async () => {
     if ("geolocation" in navigator) {
-      const watch = navigator.geolocation.watchPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setLocation({ latitude, longitude });
-          console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
-        },
-        (error) => {
-          console.error("Error getting location:", error.message);
-        },
-        {
-          enableHighAccuracy: true,
-          maximumAge: 5000, // refreshes after every 5s even if location is changed
-          timeout: 10000, // Set a timeout to handle slow responses
-        }
-      setWatchId(watch);
-    } else {
+      try {
+        const watch = await new Promise((resolve, reject) => {
+          const id = navigator.geolocation.watchPosition(
+            (position) => {
+              
+              const { latitude, longitude } = position.coords;
+              setLocation({ latitude, longitude });
+              console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
+            },
+            (error) => {
+              handleLocationError(error);
+              reject(error);
+            },
+            {
+              enableHighAccuracy: true,
+              maximumAge: 5000,
+              timeout: 10000,
+            }
+          );
+          resolve(id);
+        });
+
+        setWatchId(watch as number);
+        console.log(watchId)
+        setIsTracking(true);
+      } catch (error) {
+        console.error("Error starting location tracking:", error);
+      }
     } else {
       console.error("Geolocation is not supported by this browser.");
     }
   };
 
-  useEffect(() => {
-    fetchLocation();
-  }, []);
+  const stopLocationTracking = () => {
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      setWatchId(null);
+      setIsTracking(false);
+    }
+  };
+
+  const handleShareLocation = async () => {
+    if (!isTracking) {
+      await startLocationTracking();
+    } else {
+      stopLocationTracking();
+    }
+  };
 
   useEffect(() => {
-    const sendLocation = async (): Promise<void> => {
-      try {
-        await axios.post(`${url}/location`, {
-          latitude: location.latitude,
-          longitude: location.longitude,
-        });
-      } catch (error) {
-        console.error("Error sending location:", error);
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
       }
     };
+  }, [watchId]);
 
-    if (location.latitude !== 0 && location.longitude !== 0) {
-      sendLocation(); // Send location every time it updates
+  useEffect(() => {
+    if (isTracking && location.latitude !== 0 && location.longitude !== 0) {
+      sendLocation();
     }
-
-    return () => {
-      navigator.geolocation.clearWatch(watch);
-      console.log("Component unmounted");
-    };
-  }, [location]);
+  }, [location, isTracking, sendLocation]);
 
   return (
     <>
-      <div>
-        <button onClick={fetchLocation}>Share Location</button>
-      </div>
+      <List />
+      <h1>Location Tracker</h1>
+      <button onClick={handleShareLocation}>
+        {isTracking ? "Stop Sharing Location" : "Share Location"}
+      </button>
+      {isTracking && (
+        <div>
+          <p>Current Location:</p>
+          <p>Latitude: {location.latitude}</p>
+          <p>Longitude: {location.longitude}</p>
+        </div>
+      )}
     </>
   );
 }

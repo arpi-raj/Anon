@@ -2,11 +2,17 @@
   "compilerOptions": {
     "target": "es2016",
     "module": "commonjs",
-    "rootDirs": ["./backend", "./backend/Middleware"], // List all source directories
-    "outDir": "./dist", // Where the compiled files will go
+    "rootDir": "./",
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "paths": {
+      "*": ["*"] // Map all paths directly
+    },
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true
-  }
+  },
+  "include": ["./**/*.ts"],
+  "exclude": ["./dist"]
 }

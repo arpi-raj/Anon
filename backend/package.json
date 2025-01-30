@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc && tsc-alias"
   },
   "author": "",
   "license": "ISC",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
-    "@types/ws": "^8.5.14"
+    "@types/ws": "^8.5.14",
+    "tsc-alias": "^1.8.10"
   }
 }
