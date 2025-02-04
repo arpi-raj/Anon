@@ -1,82 +1,58 @@
 import express from "express";
 import { Router } from "express";
+import { clients, Client } from "./structure";
 import cors from "cors";
 
-const app = express();
-const router = Router();
-
-interface client {
-  prefRadius: number;
-  latitude: number;
-  longitude: number;
-}
+export const app = express();
+export const router = Router();
 
 // Add body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-function toRadians(degrees: number): number {
-  return (degrees * Math.PI) / 180;
-}
-
 let noReq: number = 1;
 
-function calculateDistance(
-  latitude1: number,
-  longitude1: number,
-  latitude2: number,
-  longitude2: number
-): number {
-  const R = 6371000; // Radius of the Earth in meters
-  const dLat = toRadians(latitude2 - latitude1);
-  const dLon = toRadians(longitude2 - longitude1);
-
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRadians(latitude1)) *
-      Math.cos(toRadians(latitude2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return R * c; // Distance in meters
-}
-
-const clients: client[] = [];
+// const clients: client[] = []; // Removed redeclaration
 
 app.use(cors());
 app.use("/api", router);
 
 router.post("/location", (req, res) => {
   //console.log(req.body);
-  const { prefRadius, latitude, longitude } = req.body;
-  const client = { prefRadius, latitude, longitude };
-  clients.push(client);
-  console.log(client);
-  console.log(noReq);
-  noReq++;
-  res.send("Location added");
+  const client: Client = req.body.client;
+  client.id = noReq++; //should change this to a unique id
+  //console.log(client);
+  try {
+    clients.addClient(client);
+    res.json({
+      id: client.id,
+      message: "Client added successfully",
+    });
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
 });
 
-router.get("/location", (req, res) => {
-  const { latitude, longitude, prefRadius } = req.query;
+router.get("/allClients", (req, res) => {
+  res.json(clients.getAllClients());
+});
 
-  const clientsWithinRadius = clients.filter((client) => {
-    const distance = calculateDistance(
-      client.latitude,
-      client.longitude,
-      parseFloat(latitude as string),
-      parseFloat(longitude as string)
-    );
-    console.log(distance);
-    return (
-      distance <= parseFloat(prefRadius as string) &&
-      distance <= client.prefRadius
-    );
-  });
+router.get("/client/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+  const client = clients.getClient(id);
+  if (client) {
+    res.json(client);
+  } else {
+    res.status(404).json({ error: "Client not found" });
+  }
+});
 
-  res.json(clientsWithinRadius);
+router.post("/chatableClients", (req, res) => {
+  const client: Client = req.body.client;
+  console.log("hello there");
+  console.log(client);
+  const chatableClients = clients.getchatableClients(client);
+  res.json(chatableClients);
 });
 
 app.listen(3000, () => {
