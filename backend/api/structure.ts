@@ -12,7 +12,7 @@ export interface Client {
   blkFlag: number;
 }
 
-class ClientManager {
+export class ClientManager {
   private clients: Client[];
   private static instance: ClientManager;
 
@@ -21,10 +21,10 @@ class ClientManager {
   }
 
   static getInstance(): ClientManager {
-    if (!this.instance) {
-      this.instance = new ClientManager();
+    if (!ClientManager.instance) {
+      ClientManager.instance = new ClientManager();
     }
-    return this.instance;
+    return ClientManager.instance;
   }
 
   addClient(client: Client): void {
@@ -33,7 +33,6 @@ class ClientManager {
     this.clients.push(client);
     // Update chatable lists for all clients when new client is added
     this.clients.forEach((client) => this.updatechatableLists(client));
-
   }
 
   removeClient(client: Client): void {
@@ -64,13 +63,6 @@ class ClientManager {
     }
   }
 
-  addChat(client: Client, chat: Client): void {
-    const c = this.clients.find((c) => c.id === client.id);
-    if (c) {
-      c.chatable.push(chat);
-    }
-  }
-
   addBlockFlag(client: Client): void {
     const c = this.clients.find((c) => c.id === client.id);
     if (c) {
@@ -87,7 +79,7 @@ class ClientManager {
   }
 
   private calculateDistance(client1: Client, client2: Client): number {
-    const R = 6371000;
+    const R = 6371e3; // Earth's radius in meters
     const φ1 = (client1.coords.lat * Math.PI) / 180;
     const φ2 = (client2.coords.lat * Math.PI) / 180;
     const Δφ = ((client2.coords.lat - client1.coords.lat) * Math.PI) / 180;
@@ -97,7 +89,9 @@ class ClientManager {
       Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
       Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
 
-    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Distance in meters
   }
 
   updatechatableLists(client: Client): void {
@@ -125,6 +119,7 @@ class ClientManager {
     client.chatable = nearbyClients;
   }
 
+  //sending wihtout the chatable and block list
   getAllClients(): Client[] {
     return this.clients;
   }
@@ -173,9 +168,28 @@ class ClientManager {
   }
 
   // Get chatable clients
-  getchatableClients(client: Client): Client[] {
-    const c = this.clients.find((c) => c.id === client.id);
-    return c ? c.chatable : [];
+  //*"error": "Converting circular structure to JSON\n    --> starting at object with constructor 'Array'\n    |     index 0 -> object with constructor 'Object'\n    |     property 'chatable' -> object with constructor 'Array'\n    |     index 0 -> object with constructor 'Object'\n    --- property 'chatable' clos
+  // gpt and co-pilot fix dunno/
+  //only return the id, prefRadius, coords, blkList, chatable, blkFlag
+
+  getChatableClients(client: Client): Client[] | string {
+    const findClient = this.clients.find((c) => c.id === client.id);
+
+    if (findClient) {
+      // Create a deep copy of the chatable list without circular references
+      return findClient.chatable.map(
+        ({ id, prefRadius, coords, blkList, chatable, blkFlag }) => ({
+          id,
+          prefRadius,
+          coords,
+          blkList,
+          chatable,
+          blkFlag,
+        })
+      );
+    } else {
+      return "Client not found";
+    }
   }
 }
 
@@ -184,7 +198,7 @@ export const clients = ClientManager.getInstance();
 const client1 = {
   id: 0,
   prefRadius: 1000,
-  coords: { lat: 30.990, long: 72.990 },
+  coords: { lat: 30.99, long: 72.99 },
   blkList: [],
   chatable: [],
   blkFlag: 0,
@@ -193,16 +207,8 @@ const client1 = {
 const client2 = {
   id: 1,
   prefRadius: 1000,
-  coords: { lat: 32.990, long: 72.990 },
+  coords: { lat: 32.99, long: 72.99 },
   blkList: [],
   chatable: [],
   blkFlag: 0,
-};
-
-clients.addClient(client1);
-clients.addClient(client2);
-
-export const test = () => {
-  console.log(clients.getNearbyClientsWithDistance(client1));
-  console.log(clients.getNearbyClientsWithDistance(client2));
 };

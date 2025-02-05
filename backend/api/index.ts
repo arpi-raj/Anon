@@ -1,7 +1,9 @@
 import express from "express";
-import { Router } from "express";
-import { clients, Client } from "./structure";
+import { Router, Request, Response } from "express";
+
+import { clients, Client, ClientManager } from "./structure";
 import cors from "cors";
+import { all } from "node_modules/axios";
 
 export const app = express();
 export const router = Router();
@@ -34,7 +36,15 @@ router.post("/location", (req, res) => {
 });
 
 router.get("/allClients", (req, res) => {
-  res.json(clients.getAllClients());
+  try {
+    const allClients = clients.getAllClients();
+    const sanitizedClients = allClients.map(
+      ({ blkList, chatable, ...client }) => client
+    );
+    res.json(sanitizedClients);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
 });
 
 router.get("/client/:id", (req, res) => {
@@ -47,12 +57,16 @@ router.get("/client/:id", (req, res) => {
   }
 });
 
-router.post("/chatableClients", (req, res) => {
-  const client: Client = req.body.client;
-  console.log("hello there");
-  console.log(client);
-  const chatableClients = clients.getchatableClients(client);
-  res.json(chatableClients);
+router.get("/chatable", (req, res) => {
+  const client = req.body.client;
+  try {
+    const chatable = clients.getChatableClients(client);
+    console.log(chatable);
+    res.json(chatable);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+    console.log(error);
+  }
 });
 
 app.listen(3000, () => {
