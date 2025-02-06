@@ -7,10 +7,11 @@ const clients = ClientManager.getInstance();
 for (let i = 0; i < 50; i++) {
   clients.addClient({
     id: i,
+    userName: `user${i + 1}`,
     chatable: [],
     blkList: [],
     blkFlag: 0,
-    prefRadius: 10000, // Set a reasonable radius
+    prefRadius: Math.random() * 10000, // Set a reasonable radius
     coords: { lat: Math.random() * 100, long: Math.random() * 100 },
   });
 }

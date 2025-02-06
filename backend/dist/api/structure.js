@@ -21,23 +21,22 @@ class ClientManager {
     removeClient(client) {
         // Remove client from all other clients' chatable lists
         this.clients.forEach((c) => {
-            c.chatable = c.chatable.filter((ch) => ch.id !== client.id);
+            c.chatable = c.chatable.filter((ch) => ch !== client.id);
         });
         this.clients = this.clients.filter((c) => c.id !== client.id);
     }
     addBlock(client, block) {
         const c = this.clients.find((c) => c.id === client.id);
         if (c) {
-            c.blkList.push(block);
+            c.blkList.push(block.id);
             // Remove from chatable when blocked
-            c.chatable = c.chatable.filter((ch) => ch.id !== block.id);
-            block.chatable = block.chatable.filter((ch) => ch.id !== client.id);
+            c.chatable = c.chatable.filter((ch) => ch !== block.id);
         }
     }
     removeBlock(client, block) {
         const c = this.clients.find((c) => c.id === client.id);
         if (c) {
-            c.blkList = c.blkList.filter((b) => b.id !== block.id);
+            c.blkList = c.blkList.filter((b) => b !== block.id);
             // Recalculate chatable list after unblock
             this.updatechatableLists(c);
             this.updatechatableLists(block);
@@ -50,7 +49,7 @@ class ClientManager {
             // If block flag reaches threshold, remove from all chatable lists
             if (c.blkFlag >= 3) {
                 this.clients.forEach((otherClient) => {
-                    otherClient.chatable = otherClient.chatable.filter((ch) => ch.id !== c.id);
+                    otherClient.chatable = otherClient.chatable.filter((ch) => ch !== c.id);
                 });
             }
         }
@@ -72,9 +71,9 @@ class ClientManager {
             if (otherClient.id === client.id)
                 return false;
             // Skip if client is in block list
-            if (client.blkList.some((b) => b.id === otherClient.id))
+            if (client.blkList.some((b) => b === otherClient.id))
                 return false;
-            if (otherClient.blkList.some((b) => b.id === client.id))
+            if (otherClient.blkList.some((b) => b === client.id))
                 return false;
             // Skip if client has too many block flags
             if (otherClient.blkFlag >= 3)
@@ -85,7 +84,7 @@ class ClientManager {
             return (distance <= client.prefRadius && distance <= otherClient.prefRadius);
         });
         // Update chatable list
-        client.chatable = nearbyClients;
+        client.chatable = nearbyClients.map((c) => c.id);
     }
     //sending wihtout the chatable and block list
     getAllClients() {
@@ -102,11 +101,17 @@ class ClientManager {
         this.updatechatableLists(client);
         // Return chatable clients with distances
         return client.chatable
-            .map((otherClient) => ({
-            client: otherClient,
-            distance: this.calculateDistance(client, otherClient),
-        }))
-            .sort((a, b) => a.distance - b.distance);
+            .map((id) => {
+            const c = this.clients.find((c) => c.id === id);
+            if (c) {
+                return {
+                    id: c.id,
+                    distance: this.calculateDistance(client, c),
+                };
+            }
+            return undefined;
+        })
+            .filter((c) => c !== undefined);
     }
     // Update client location
     updateClientLocation(client, newCoords) {
@@ -128,20 +133,21 @@ class ClientManager {
     }
     // Get chatable clients
     //*"error": "Converting circular structure to JSON\n    --> starting at object with constructor 'Array'\n    |     index 0 -> object with constructor 'Object'\n    |     property 'chatable' -> object with constructor 'Array'\n    |     index 0 -> object with constructor 'Object'\n    --- property 'chatable' clos
-    // gpt and co-pilot fix dunno/
+    // gpt and co-pilot fix dunno --update got it/
     //only return the id, prefRadius, coords, blkList, chatable, blkFlag
+    //not fixes yet
     getChatableClients(client) {
         const findClient = this.clients.find((c) => c.id === client.id);
         if (findClient) {
-            // Create a deep copy of the chatable list without circular references
-            return findClient.chatable.map(({ id, prefRadius, coords, blkList, chatable, blkFlag }) => ({
-                id,
-                prefRadius,
-                coords,
-                blkList,
-                chatable,
-                blkFlag,
-            }));
+            return findClient.chatable
+                .map((id) => {
+                const c = this.clients.find((c) => c.id === id);
+                if (c) {
+                    return { names: c.userName, ids: c.id };
+                }
+                return undefined;
+            })
+                .filter((c) => c !== undefined);
         }
         else {
             return "Client not found";
