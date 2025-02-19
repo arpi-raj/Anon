@@ -13,6 +13,7 @@ export interface Client {
   blkFlag: number;
 }
 
+//singleton class
 export class ClientManager {
   private clients: Client[];
   private static instance: ClientManager;
@@ -94,7 +95,7 @@ export class ClientManager {
     return R * c; // Distance in meters
   }
 
-  updatechatableLists(client: Client): void {
+  private updatechatableLists(client: Client): void {
     const nearbyClients = this.clients.filter((otherClient) => {
       // Skip if it's the same client
       if (otherClient.id === client.id) return false;
@@ -179,25 +180,24 @@ export class ClientManager {
   //only return the id, prefRadius, coords, blkList, chatable, blkFlag
   //not fixes yet
 
-  getChatableClients(client: Client): Array<{name:string,id:number}> | string {
+  getChatableClients(
+    client: Client
+  ): Array<{ name: string; id: number }> | string {
     const findClient = this.clients.find((c) => c.id === client.id);
+    if (!findClient) return "Client not found";
 
-    if (findClient) {
-      return findClient.chatable
-        .map((id) => {
-          const c = this.clients.find((c) => c.id === id);
-          if (c) {
-            return { name: c.userName, id: c.id };
-          }
-          return undefined;
-        })
-        .filter((c): c is { name: string; id: number } => c !== undefined);
-    } else {
-      return "Client not found";
-    }
+    console.log("Chatable IDs:", findClient.chatable);
+
+    return findClient.chatable
+      .map((id) => {
+        const c = this.clients.find((c) => c.id === id);
+        if (c) {
+          console.log("Found user:", c.userName, "with ID:", c.id);
+          return { name: c.userName, id: c.id };
+        }
+      })
+      .filter(Boolean) as Array<{ name: string; id: number }>;
   }
 }
 
 export const clients = ClientManager.getInstance();
-
-

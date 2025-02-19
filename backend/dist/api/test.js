@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const structure_1 = require("./structure");
 const axios_1 = __importDefault(require("axios"));
 const clients = structure_1.ClientManager.getInstance();
+const PORT = process.env.SERVER_PORT || 3000;
 // Populate with 50 clients
 for (let i = 0; i < 50; i++) {
     clients.addClient({
@@ -33,7 +34,7 @@ setInterval(() => {
     batch.forEach((client) => {
         console.log(`Sending location for client ${client.id}...`);
         axios_1.default
-            .post("http://localhost:3000/api/location", { client })
+            .post(`http://localhost:${PORT}/api/addClient`, { client })
             .catch((err) => console.error(`Error sending for client ${client.id}:`, err.message));
     });
     // Move to the next batch

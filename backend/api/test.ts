@@ -2,6 +2,7 @@ import { ClientManager, Client } from "./structure";
 import axios from "axios";
 
 const clients = ClientManager.getInstance();
+const PORT = process.env.SERVER_PORT || 3000;
 
 // Populate with 50 clients
 for (let i = 0; i < 50; i++) {
@@ -35,7 +36,7 @@ setInterval(() => {
   batch.forEach((client) => {
     console.log(`Sending location for client ${client.id}...`);
     axios
-      .post("http://localhost:3000/api/location", { client })
+      .post(`http://localhost:${PORT}/api/addClient`, { client })
       .catch((err) =>
         console.error(`Error sending for client ${client.id}:`, err.message)
       );

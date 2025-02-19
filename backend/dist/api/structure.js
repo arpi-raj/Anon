@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.clients = exports.ClientManager = void 0;
+//singleton class
 class ClientManager {
     constructor() {
         this.clients = [];
@@ -138,37 +139,19 @@ class ClientManager {
     //not fixes yet
     getChatableClients(client) {
         const findClient = this.clients.find((c) => c.id === client.id);
-        if (findClient) {
-            return findClient.chatable
-                .map((id) => {
-                const c = this.clients.find((c) => c.id === id);
-                if (c) {
-                    return { names: c.userName, ids: c.id };
-                }
-                return undefined;
-            })
-                .filter((c) => c !== undefined);
-        }
-        else {
+        if (!findClient)
             return "Client not found";
-        }
+        console.log("Chatable IDs:", findClient.chatable);
+        return findClient.chatable
+            .map((id) => {
+            const c = this.clients.find((c) => c.id === id);
+            if (c) {
+                console.log("Found user:", c.userName, "with ID:", c.id);
+                return { name: c.userName, id: c.id };
+            }
+        })
+            .filter(Boolean);
     }
 }
 exports.ClientManager = ClientManager;
 exports.clients = ClientManager.getInstance();
-const client1 = {
-    id: 0,
-    prefRadius: 1000,
-    coords: { lat: 30.99, long: 72.99 },
-    blkList: [],
-    chatable: [],
-    blkFlag: 0,
-};
-const client2 = {
-    id: 1,
-    prefRadius: 1000,
-    coords: { lat: 32.99, long: 72.99 },
-    blkList: [],
-    chatable: [],
-    blkFlag: 0,
-};
