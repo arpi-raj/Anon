@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSetRecoilState } from "recoil";
 import {
   startLocationWatch,
@@ -13,6 +14,7 @@ const Home = () => {
   const [watchId, setWatchId] = useState<number | null>(null);
   const [prefRad, setPrefRad] = useState(0);
   const isFirstUpdate = useRef(true);
+  const nav = useNavigate();
 
   useEffect(() => {
     const startWatch = async () => {
@@ -62,7 +64,7 @@ const Home = () => {
             setPrefRad(Number(target.value));
           }}
         ></input>
-        <button>chat</button>
+        <button onClick={() => nav("/chat")}>chat</button>
       </div>
     </div>
   );
