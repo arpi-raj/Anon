@@ -12,12 +12,16 @@ class ClientManager {
         }
         return ClientManager.instance;
     }
+    checkClientExists(clientId) {
+        return this.clients.some((client) => client.id === clientId);
+    }
     addClient(client) {
         // Initialize chatable array
         client.chatable = [];
         this.clients.push(client);
         // Update chatable lists for all clients when new client is added
         this.clients.forEach((client) => this.updatechatableLists(client));
+        console.log("Client added:", client.userName, "with ID:", client.id);
     }
     removeClient(client) {
         // Remove client from all other clients' chatable lists
@@ -137,17 +141,17 @@ class ClientManager {
     // gpt and co-pilot fix dunno --update got it/
     //only return the id, prefRadius, coords, blkList, chatable, blkFlag
     //not fixes yet
-    getChatableClients(client) {
-        const findClient = this.clients.find((c) => c.id === client.id);
+    getChatableClients(id) {
+        const findClient = this.clients.find((c) => c.id === id);
         if (!findClient)
             return "Client not found";
-        console.log("Chatable IDs:", findClient.chatable);
+        //console.log("Chatable IDs:", findClient.chatable);
         return findClient.chatable
             .map((id) => {
             const c = this.clients.find((c) => c.id === id);
             if (c) {
-                console.log("Found user:", c.userName, "with ID:", c.id);
-                return { name: c.userName, id: c.id };
+                //console.log("Found user:", c.userName, "with ID:", c.id);
+                return { userName: c.userName, id: c.id };
             }
         })
             .filter(Boolean);

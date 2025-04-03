@@ -4,12 +4,12 @@ interface Coords {
 }
 
 export interface Client {
-  id: number;
+  id: number; // UUID string
   userName: string;
   prefRadius: number;
   coords: Coords;
-  blkList: number[]; //now it contains id of the blocked clients
-  chatable: number[];
+  blkList: number[]; // Store UUIDs of blocked clients
+  chatable: number[]; // Store UUIDs of chatable clients
   blkFlag: number;
 }
 
@@ -29,12 +29,17 @@ export class ClientManager {
     return ClientManager.instance;
   }
 
+  checkClientExists(clientId: number): boolean {
+    return this.clients.some((client) => client.id === clientId);
+  }
+
   addClient(client: Client): void {
     // Initialize chatable array
     client.chatable = [];
     this.clients.push(client);
     // Update chatable lists for all clients when new client is added
     this.clients.forEach((client) => this.updatechatableLists(client));
+    console.log("Client added:", client.userName, "with ID:", client.id);
   }
 
   removeClient(client: Client): void {
@@ -181,22 +186,22 @@ export class ClientManager {
   //not fixes yet
 
   getChatableClients(
-    client: Client
-  ): Array<{ name: string; id: number }> | string {
-    const findClient = this.clients.find((c) => c.id === client.id);
+    id: number
+  ): Array<{ userName: string; id: number }> | string {
+    const findClient = this.clients.find((c) => c.id === id);
     if (!findClient) return "Client not found";
 
-    console.log("Chatable IDs:", findClient.chatable);
+    //console.log("Chatable IDs:", findClient.chatable);
 
     return findClient.chatable
       .map((id) => {
         const c = this.clients.find((c) => c.id === id);
         if (c) {
-          console.log("Found user:", c.userName, "with ID:", c.id);
-          return { name: c.userName, id: c.id };
+          //console.log("Found user:", c.userName, "with ID:", c.id);
+          return { userName: c.userName, id: c.id };
         }
       })
-      .filter(Boolean) as Array<{ name: string; id: number }>;
+      .filter(Boolean) as Array<{ userName: string; id: number }>;
   }
 }
 

@@ -19,10 +19,10 @@ const express_1 = __importDefault(require("express"));
 const express_2 = require("express");
 const chatRoutes_1 = __importDefault(require("./chatRoutes"));
 const structure_1 = require("../structure");
+const jwtAuth_1 = require("../../Middleware/jwtAuth");
 const cors_1 = __importDefault(require("cors"));
 const http_1 = __importDefault(require("http"));
 const socket_1 = require("../socket");
-const crypto_1 = __importDefault(require("crypto"));
 // Create Express app
 exports.app = (0, express_1.default)();
 exports.app.use(express_1.default.json());
@@ -30,6 +30,7 @@ exports.app.use(express_1.default.urlencoded({ extended: true }));
 exports.app.use((0, cors_1.default)());
 // Create HTTP server from Express app
 const server = http_1.default.createServer(exports.app);
+const key = "Arpit Server";
 // Initialize WebSocket server with the HTTP server
 const wss = socket_1.WebSocketServerSingleton.getInstance(server);
 // Store pending WebSocket registrations
@@ -39,18 +40,13 @@ const router = (0, express_2.Router)();
 exports.app.use("/api", router);
 exports.app.use("/api/chat", chatRoutes_1.default);
 let noReq = 1;
-// Generate secure token for WebSocket authentication
-function generateSecureToken(clientId) {
-    const randomBytes = crypto_1.default.randomBytes(16).toString("hex");
-    return `${clientId}_${randomBytes}`;
-}
 router.post("/addClient", (req, res) => {
     try {
         const { coords, userName, prefRad } = req.body;
         console.log(coords);
         // Ensure client object is created properly
         const client = {
-            id: noReq++, // Generate a unique ID
+            id: Date.now(), // Generate a unique ID
             userName,
             coords,
             prefRadius: prefRad,
@@ -59,10 +55,11 @@ router.post("/addClient", (req, res) => {
             chatable: [],
         };
         structure_1.clients.addClient(client);
+        console.log("Client added:", client);
         // Generate token for WebSocket authentication
-        const token = generateSecureToken(client.id.toString());
+        const token = (0, jwtAuth_1.sign)(JSON.stringify(client));
         // Store token mapping for later verification during WebSocket connection
-        pendingConnections.set(token, client.id.toString());
+        pendingConnections.set(token, client.id);
         // Set token expiration (optional, for security)
         setTimeout(() => {
             pendingConnections.delete(token);
@@ -90,6 +87,10 @@ router.get("/allClients", (req, res) => {
         res.status(400).json({ error: error.message });
     }
 });
+router.post("/verifyClient", jwtAuth_1.verifyToken, (req, res) => {
+    var _a;
+    res.json({ message: "Client verified", id: (_a = req.user) === null || _a === void 0 ? void 0 : _a.id });
+});
 router.get("/client/:id", (req, res) => {
     const id = parseInt(req.params.id);
     const client = structure_1.clients.getClient(id);
@@ -100,13 +101,16 @@ router.get("/client/:id", (req, res) => {
         res.status(404).json({ error: "Client not found" });
     }
 });
-router.get("/chatable", (req, res) => {
-    const client = req.body.client;
-    if (!client) {
+router.get("/chatable", jwtAuth_1.verifyToken, // Verify token before proceeding
+(req, res) => {
+    var _a;
+    const id = parseInt((_a = req.user) === null || _a === void 0 ? void 0 : _a.id);
+    if (!id) {
         res.status(400).json({ error: "Client data is required" });
     }
     try {
-        const chatable = structure_1.clients.getChatableClients(client);
+        console.log(id);
+        const chatable = structure_1.clients.getChatableClients(id);
         console.log("Final chatable clients:", chatable);
         res.json(chatable);
     }
