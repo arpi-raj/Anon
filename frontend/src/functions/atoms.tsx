@@ -5,9 +5,16 @@ import { LocationState } from "./helper";
 
 const { persistAtom } = recoilPersist();
 
-export const token = atom({
+export const tokenState = atom({
   key: "token",
   default: "",
+  effects_UNSTABLE: [persistAtom],
+});
+
+export const idState = atom({
+  key: "id",
+  default: null,
+  effects_UNSTABLE: [persistAtom],
 });
 
 export const locationState = atom<LocationState>({

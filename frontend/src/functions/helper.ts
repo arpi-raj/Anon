@@ -1,5 +1,5 @@
 import axios from "axios";
-
+import { SetterOrUpdater } from "recoil";
 
 const url = import.meta.env.VITE_API_URL as string;
 
@@ -59,6 +59,47 @@ export async function addClient(
     }
   }
 }
+
+export const getChatableClients = async (
+  token: string,
+  id: number
+): Promise<{ id: number; userName: string }[]> => {
+  try {
+    const response = await axios.get(`${url}/chatable?id=${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log(response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error getting chatable clients:", error);
+    throw error;
+  }
+};
+
+export const verifyRoute = async (
+  token: string,
+  setIdState: SetterOrUpdater<number>
+) => {
+  try {
+    const response = await axios.post(
+      `${url}/verifyClient`,
+      {}, // Empty body since no data is sent
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, // Ensure "Authorization" is capitalized
+        },
+      }
+    );
+    console.log(response.data);
+    setIdState(response.data.id);
+    return response;
+  } catch (error) {
+    console.error("Error verifying route:", error);
+    throw error;
+  }
+};
 
 export const stopLocationWatch = (watchId: number) => {
   navigator.geolocation.clearWatch(watchId);

@@ -1,70 +1,101 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSetRecoilState } from "recoil";
+import { useRecoilValue, useSetRecoilState } from "recoil";
 import {
   startLocationWatch,
   stopLocationWatch,
   addClient,
+  verifyRoute,
 } from "../functions/helper";
-import { locationState } from "../functions/atoms"; // Recoil atom for location
+import { locationState, tokenState, idState } from "../functions/atoms";
 
 const Home = () => {
   const setRecoilLocation = useSetRecoilState(locationState);
-  const [location, setLocationState] = useState({ long: 0, lat: 0 });
+  const setToken = useSetRecoilState(tokenState);
+  const setIdState = useSetRecoilState(idState);
+
+  const token = useRecoilValue(tokenState);
+  const id = useRecoilValue(idState);
+  const recoilLocation = useRecoilValue(locationState);
+
+  const [location, setLocationState] = useState(recoilLocation || { long: 0, lat: 0 });
   const [watchId, setWatchId] = useState<number | null>(null);
-  const [prefRad, setPrefRad] = useState(0);
-  const isFirstUpdate = useRef(true);
+  const [prefRad, setPrefRad] = useState(100);
+  const [username, setUsername] = useState("");
+  const [lastUpdated, setLastUpdated] = useState(0);
+  const [shouldSendRequest, setShouldSendRequest] = useState(false);
   const nav = useNavigate();
 
   useEffect(() => {
     const startWatch = async () => {
-      // Start watching location
       const watch = await startLocationWatch((newLocation) => {
-        setLocationState(newLocation); // Update local state
-        setRecoilLocation(newLocation); // Update Recoil state
+        const now = Date.now();
+        if (now - lastUpdated >= 5000) {
+          setLocationState(newLocation);
+          setRecoilLocation(newLocation);
+          setLastUpdated(now);
+        }
       });
-
-      setWatchId(watch.watchId); // Store watch ID for cleanup
+      setWatchId(watch.watchId);
     };
 
     startWatch();
-
     return () => {
-      if (watchId !== null) {
-        stopLocationWatch(watchId);
-      }
+      if (watchId !== null) stopLocationWatch(watchId);
     };
-  }, []); // Runs only on mount
+  }, [lastUpdated]);
 
   useEffect(() => {
-    if (location.long !== 0 && location.lat !== 0) {
+    if (shouldSendRequest && location.long !== 0 && location.lat !== 0 && username.trim()) {
       const fetchData = async () => {
-        if (isFirstUpdate.current) {
-          await addClient("test", location, prefRad);
-          isFirstUpdate.current = false; // No re-render
+        if (id != null) {
+          const response = await addClient(username, location, prefRad);
+          setToken(response.token);
+          setIdState(response.id);
+          console.log("Token and ID saved:", response.token, response.id);
         } else {
-          // await updateClient("test", location);
-          console.log("Updated location: "+ "lat:" + location.lat+ ", long: " + location.long);
+          console.log("Updated location:", location);
         }
+        setRecoilLocation(location);
       };
       fetchData();
-      setRecoilLocation(location);
+      setShouldSendRequest(false);
     }
-  }, [location, prefRad]);
+  }, [shouldSendRequest]);
 
   return (
-    <div>
-      <h1>Welcome to AnonChat</h1>
-      <p>To get starded just enter your preffered radius and click chat</p>
-      <div>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
+      <h1 className="text-4xl font-bold mb-4">Welcome to AnonChat</h1>
+      <p className="mb-6 text-gray-300">Enter your preferred radius and username to start chatting</p>
+      <div className="flex flex-col gap-4 w-full max-w-md">
         <input
-          placeholder="Preffered Radius"
-          onClick={(e) => {
-            const target = e.target as HTMLInputElement;
-            setPrefRad(Number(target.value));
+          type="text"
+          className="p-3 rounded-lg bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Enter Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <input
+          type="number"
+          className="p-3 rounded-lg bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          defaultValue={100}
+          placeholder="Preferred Radius"
+          onChange={(e) => setPrefRad(Number(e.target.value))}
+        />
+        <button
+          className="p-3 rounded-lg bg-blue-600 hover:bg-blue-700 transition text-white font-semibold"
+          onClick={() => {
+            if (!username.trim()) {
+              alert("Please enter a username");
+              return;
+            }
+            setShouldSendRequest(true);
+            nav("/chat");
+            verifyRoute(token, setIdState);
           }}
-        ></input>
-        <button onClick={() => nav("/chat")}>chat</button>
+        >
+          Chat
+        </button>
       </div>
     </div>
   );
